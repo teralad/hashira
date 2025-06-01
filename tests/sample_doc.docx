@@ -1,0 +1,3 @@
+API Endpoint: /greet
+Method: GET
+Description: Returns a greeting message
