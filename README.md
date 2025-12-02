@@ -14,6 +14,7 @@ Hashira is a powerful code generation tool that converts API specifications into
 
 - Python 3.7 or higher
 - Required Python packages (see Installation section)
+- **Note**: Model downloading from Hugging Face may experience intermittent connectivity issues. The app includes fallback templates if model loading fails.
 
 ## Installation
 
