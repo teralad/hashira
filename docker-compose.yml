@@ -1,0 +1,28 @@
+version: '3.8'
+
+services:
+  hashira:
+    build: .
+    container_name: hashira-app
+    ports:
+      - "8501:8501"
+    volumes:
+      # Mount your local HuggingFace cache so Docker uses downloaded models
+      - ~/.cache/huggingface:/app/.cache/huggingface
+      # Use named volume instead of bind mount to avoid permission issues
+      - generated-code:/app/generated_code
+    environment:
+      - TRANSFORMERS_CACHE=/app/.cache/huggingface
+      - HF_HOME=/app/.cache/huggingface
+    restart: unless-stopped
+    # Uncomment for GPU support (requires nvidia-docker)
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: 1
+    #           capabilities: [gpu]
+
+volumes:
+  generated-code:
