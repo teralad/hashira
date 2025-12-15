@@ -1,80 +1,29 @@
 from transformers import pipeline, AutoTokenizer, AutoModelForCausalLM
 import os
 
-# Set cache directory explicitly
-cache_dir = "/app/.cache/huggingface"
-os.environ["HF_HOME"] = cache_dir
-os.environ["TRANSFORMERS_CACHE"] = cache_dir
-
 # Lazy load the model - only initialize when first called
 _pipe = None
 
 def get_pipeline():
     global _pipe
     if _pipe is None:
-        # Try to load model from cache
-        model_name = "Salesforce/codegen-350M-mono"
-        
+        # Using StarCoder - best model for code generation
+        # Priority: StarCoder > CodeGen > DistilGPT2
         try:
-            print(f"Loading model from cache: {model_name}...")
-            
-            # Load tokenizer and model separately with explicit cache dir
-            tokenizer = AutoTokenizer.from_pretrained(
-                model_name,
-                cache_dir=cache_dir,
-                local_files_only=True,
-                trust_remote_code=True
-            )
-            
-            model = AutoModelForCausalLM.from_pretrained(
-                model_name,
-                cache_dir=cache_dir,
-                local_files_only=True,
-                trust_remote_code=True,
-                low_cpu_mem_usage=True
-            )
-            
-            _pipe = pipeline(
-                "text-generation",
-                model=model,
-                tokenizer=tokenizer,
-                device=-1  # CPU
-            )
-            
-            print(f"✓ Successfully loaded: {model_name}")
-            
+            model_name = "bigcode/starcoderbase"
+            _pipe = pipeline("text-generation", model=model_name)
+            print(f"✓ Loaded model: {model_name}")
         except Exception as e:
-            print(f"✗ CodeGen failed: {str(e)[:200]}")
-            print("Trying distilgpt2...")
-            
-            # Fallback to distilgpt2
+            # Fallback to CodeGen if StarCoder fails
             try:
-                model_name = "distilgpt2"
-                tokenizer = AutoTokenizer.from_pretrained(
-                    model_name,
-                    cache_dir=cache_dir,
-                    local_files_only=True
-                )
-                
-                model = AutoModelForCausalLM.from_pretrained(
-                    model_name,
-                    cache_dir=cache_dir,
-                    local_files_only=True
-                )
-                
-                _pipe = pipeline(
-                    "text-generation",
-                    model=model,
-                    tokenizer=tokenizer,
-                    device=-1
-                )
-                
-                print(f"✓ Successfully loaded: {model_name}")
-                
+                model_name = "Salesforce/codegen-350M-mono"
+                _pipe = pipeline("text-generation", model=model_name)
+                print(f"✓ Loaded fallback model: {model_name}")
             except Exception as e2:
-                print(f"✗ All models failed. Error: {str(e2)[:200]}")
-                _pipe = None
-    
+                # Final fallback to DistilGPT2
+                model_name = "distilgpt2"
+                _pipe = pipeline("text-generation", model=model_name)
+                print(f"✓ Loaded backup model: {model_name}")
     return _pipe
 
 def generate_code_from_description(api_desc, archetype=""):
@@ -133,22 +82,22 @@ Return ONLY valid, compilable Java code without any explanations."""
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.ResponseEntity;
 
-@RestController
-@RequestMapping("/api")
-public class GeneratedAPIController {{
+Return only valid Java code.
+"""
+    try:
+        pipe = get_pipeline()
+        result = pipe(prompt, max_new_tokens=1024, do_sample=False)[0]["generated_text"]
+        return result
+    except Exception as e:
+        # Fallback to a simple template if model fails
+        return f"""
+public class GeneratedAPI {{
+    // API Description:
+    // {api_desc}
     
-    /**
-     * API Specification:
-     * {api_desc.replace(newline, newline + '     * ')}
-     */
+    // Note: Model loading failed. Please check your internet connection.
+    // Error: {str(e)}
     
-{newline.join(endpoints)}
-    
-    @GetMapping("/hello")
-    public ResponseEntity<String> sayHello() {{
-        return ResponseEntity.ok("Hello, World!");
-    }}
-    
-    // Add your implementation here
+    // Implement your API endpoints here based on the description above
 }}
 """
