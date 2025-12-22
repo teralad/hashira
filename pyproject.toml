@@ -1,0 +1,46 @@
+[build-system]
+requires = ["setuptools>=45", "wheel", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "hashira-mcp"
+version = "0.1.0"
+description = "AI-powered Java code generator from API specifications - MCP Server"
+readme = "README.md"
+requires-python = ">=3.7"
+license = {text = "MIT"}
+authors = [
+    {name = "Your Name", email = "your.email@example.com"}
+]
+keywords = ["mcp", "code-generation", "openapi", "java", "ai"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Topic :: Software Development :: Code Generators",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+]
+
+dependencies = [
+    "transformers>=4.30.0",
+    "torch>=2.0.0",
+    "pyyaml>=6.0",
+    "python-docx>=0.8.11",
+    "mcp>=1.0.0",
+]
+
+[project.optional-dependencies]
+web = ["streamlit>=1.28.0"]
+
+[project.scripts]
+hashira = "cli:main"
+hashira-mcp = "server:main"
+
+[project.urls]
+Homepage = "https://github.com/teralad/hashira"
+Repository = "https://github.com/teralad/hashira"
+Issues = "https://github.com/teralad/hashira/issues"
+
+[tool.setuptools]
+packages = ["llm", "parsers", "templates"]
+include-package-data = true
